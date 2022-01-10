@@ -1,2 +1,12 @@
 # BettingNetworks
 Implementation of the algorithm described in *coming soon*
+
+## EfficientNet
+Original code written as a ipynb file which can be executed in Google Colab. The required packages are installed n the top code cell.
+The models mentioned in the paper accompany the notebook file.
+
+## Pointnet2++
+Implementation from https://github.com/yanx27/Pointnet_Pointnet2_pytorch
+Minor modification were required on test_classification.py and train_classification.py
+A new model with the Betting loss is added.
+To replicate the experiments of the paper, replace/add these files to the original git implementation and follow the instruction from there
