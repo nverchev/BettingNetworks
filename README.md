@@ -14,6 +14,9 @@ To replicate the experiments of the paper, replace/add these files to the origin
 Command used in the experiment:
 
 python train_classification.py --model pointnet2_cls_ssg --log_dir pointnet2_ssg_no_uniform
+
 python test_classification.py --log_dir pointnet2_ssg_no_uniform
+
 python train_classification.py --model pointnet2_betting_ssg --log_dir pointnet2_betting_ssg_no_uniform
+
 python test_classification.py --model pointnet2_betting_ssg --log_dir pointnet2_betting_ssg_no_uniform 
