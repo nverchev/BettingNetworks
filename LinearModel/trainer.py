@@ -4,7 +4,10 @@ import matplotlib.pyplot as plt
 from Utils.trainer import Trainer
 from losses import get_loss
 
+
 class ClassificationTrainer(Trainer):
+    quiet_mode = True
+
     def __init__(self, model, exp_name, block_args):
         super().__init__(model, exp_name, **block_args)
         self.test_probs = None
