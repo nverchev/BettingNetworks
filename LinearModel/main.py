@@ -63,5 +63,5 @@ if __name__ == '__main__':
 
     trainer = get_trainer(model, exp_name, loss, block_args)
 
-    trainer.silent_mode = True
+    trainer.quiet_mode = True
     trainer.train(epochs)
