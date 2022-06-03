@@ -51,7 +51,7 @@ class ClassificationTrainer(Trainer):
 
     def prob_analysis(self, on='val', bins=100, prob='book'):  # call after test
         print(self.exp_name)
-        if not self.wrong_indices:
+        if len(self.wrong_indices) == 0:
             self.test(on=on, prob=prob)
         self.bins = bins
         self.uniform_calibration_prediction()
