@@ -35,14 +35,14 @@ class Trainer(metaclass=ABCMeta):
     max_output = np.inf  # maximum amount of stored evaluated test samples
     bin = ''  # minio bin
 
-    def __init__(self, model, version, device, optim, train_loader, val_loader=None,
+    def __init__(self, model, exp_name, device, optim, train_loader, val_loader=None,
                  test_loader=None, minioClient=None, dir_path='./', mp=False, **block_args):
 
         torch.manual_seed = 112358
         self.epoch = 0
         self.device = device  # to cuda or not to cuda?
         self.model = model.to(device)  # model is not copied
-        self.version = version  # name used for saving and loading
+        self.exp_name = exp_name  # name used for saving and loading
         self.schedule = block_args['schedule']
         self.settings = {**model.settings, **block_args, 'Optimizer': str(optim)}
         self.optimizer_settings = block_args['optim_args'].copy()
@@ -98,7 +98,7 @@ class Trainer(metaclass=ABCMeta):
         return
 
     def train(self, num_epoch, val_after_train=False):
-        print('Version ', self.version)
+        print('Version ', self.exp_name)
         for _ in range(num_epoch):
             self.update_learning_rate(self.optimizer_settings['params'])
             self.epoch += 1
@@ -112,7 +112,7 @@ class Trainer(metaclass=ABCMeta):
         return
 
     def test(self, on='val'):  # runs and stores evaluated test samples
-        print('Version ', self.version)
+        print('Version ', self.exp_name)
         self._run_session(mode=on, inference=True, save_outputs=True)
         return
 
@@ -199,7 +199,7 @@ class Trainer(metaclass=ABCMeta):
             plt.plot(epochs, self.val_losses[loss], label='val')
         plt.xlabel('Epochs')
         plt.ylabel(tidy_loss)
-        plt.title(f"{self.version}")
+        plt.title(f"{self.exp_name}")
         plt.show()
         return
 
@@ -263,7 +263,7 @@ class Trainer(metaclass=ABCMeta):
         return
 
     def load(self, epoch=None):
-        directory = self.version
+        directory = self.exp_name
 
         if epoch is not None:
             self.epoch = epoch
@@ -274,7 +274,7 @@ class Trainer(metaclass=ABCMeta):
                     file_dir, *file_name = file.object_name.split("/")
                     if file_dir == directory and file_name[0][:5] == 'model':
                         past_epochs.append(int(re.sub("\D", "", file_name[0])))
-            local_path = os.path.join(self.dir_path, self.version)
+            local_path = os.path.join(self.dir_path, self.exp_name)
             if os.path.exists(local_path):
                 for file in os.listdir(local_path):
                     if file[:5] == 'model':
@@ -302,7 +302,7 @@ class Trainer(metaclass=ABCMeta):
             directory = os.path.join(self.dir_path, new_version)
             ep = self.epoch
         else:
-            directory = os.path.join(self.dir_path, self.version)
+            directory = os.path.join(self.dir_path, self.exp_name)
             ep = self.epoch
         if not os.path.exists(directory):
             os.mkdir(directory)

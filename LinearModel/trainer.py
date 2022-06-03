@@ -2,10 +2,11 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from Utils.trainer import Trainer
+from losses import get_loss
 
 class ClassificationTrainer(Trainer):
-    def __init__(self, model, version, block_args):
-        super().__init__(model, version, **block_args)
+    def __init__(self, model, exp_name, block_args):
+        super().__init__(model, exp_name, **block_args)
         self.test_probs = None
         self.targets = None
         self.test_pred = None
@@ -49,7 +50,7 @@ class ClassificationTrainer(Trainer):
         return weights_err
 
     def prob_analysis(self, on='val', bins=100, prob='book'):  # call after test
-        print(self.version)
+        print(self.exp_name)
         if not self.wrong_indices:
             self.test(on=on, prob=prob)
         self.bins = bins
@@ -180,10 +181,10 @@ class ClassificationTrainer(Trainer):
         return torch.stack(avg_conf), torch.stack(avg_corr)
 
 
-def get_trainer(model, trainer_name, recon_loss, block_args):
-    Loss = get_loss(recon_loss)
+def get_trainer(model, exp_name, loss, block_args):
+    Loss = get_loss(loss)
 
     class FinalTrainer(Loss, ClassificationTrainer):
         pass
 
-    return FinalTrainer(model, trainer_name, block_args)
+    return FinalTrainer(model, exp_name, block_args)

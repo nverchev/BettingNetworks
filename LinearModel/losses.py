@@ -110,11 +110,11 @@ class BettingCrossEntropyLoss(BettingLoss):
 
 def get_loss(class_loss):
     class_loss_dict = {
-        "BCE": VAELossChamfer,
-        "MAE": VAELossNLL,
-        "MSE": VAELossMMD,
-        "Naive": VAELossSinkhorn,
-        "Naive": VAELossSinkhorn,
-        "Naive": VAELossSinkhorn,
+        "BCE": BCELoss,
+        "MAE": MAELoss,
+        "MSE": MSELoss,
+        "Naive": NaiveBetLoss,
+        "Betting": BettingLoss,
+        "CrossBet": BettingCrossEntropyLoss,
     }
     return class_loss_dict[class_loss]
