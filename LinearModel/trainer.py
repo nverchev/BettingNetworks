@@ -48,6 +48,7 @@ class ClassificationTrainer(Trainer):
     def get_weights_err(self):
         infer_weights = self.model.state_dict()['lin.weight'].squeeze()
         infer_weights = torch.hstack([self.model.state_dict()['lin.bias'], infer_weights])
+        infer_weights = infer_weights / (infer_weights ** 2).sum()
         target_weights = self.train_loader.dataset.weights.to(self.device)
         weights_err = ((infer_weights - target_weights) ** 2).sum()
         return weights_err
@@ -100,7 +101,7 @@ class ClassificationTrainer(Trainer):
 
         nonzero = np.nonzero(hist)
         ece = np.abs(obs_prob[nonzero] - confidence[nonzero]).mean()
-        print('ECE_pred: ', ece.item())
+        print('ECE: ', ece.item())
 
     def quantile_calibration_prediction(self):
         right_conf = torch.ones_like(self.test_probs)
@@ -125,7 +126,7 @@ class ClassificationTrainer(Trainer):
         plt.show()
 
         ece = np.abs(obs_prob - confidence).mean()
-        print('Quantile ECE_pred: ', ece.item())
+        print('Quantile ECE: ', ece.item())
         return
 
     def coverage(self, crossentropy=False):

@@ -48,6 +48,7 @@ class LinearClassificationDataset(Dataset):
 def get_dataset(num_weights, batch_size, noise_data, noise_label, classification=True):
     np.random.seed(1337)
     weights = torch.from_numpy(np.random.randn(num_weights))
+    weights = weights / (weights ** 2).sum()
     LinearDataset = LinearClassificationDataset if classification else LinearRegressionDataset
     pin_memory = torch.cuda.is_available()
     train_dataset = LinearDataset(weights, noise_data, noise_label)
