@@ -22,8 +22,8 @@ class ClassificationTrainer(Trainer):
         return self._loss(output, targets)
 
     # overwrites Trainer method
-    def test(self, on='test', prob='book'):
-        super().test(on=on)  # stored in RAM
+    def test(self, partition='test', prob='book'):
+        super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
             self.test_probs = torch.sigmoid(y)
@@ -57,7 +57,7 @@ class ClassificationTrainer(Trainer):
     def prob_analysis(self, on='val', bins=100, prob='book'):  # call after test
         print(self.exp_name)
         if len(self.wrong_indices) == 0:
-            self.test(on=on, prob=prob)
+            self.test(partition=on, prob=prob)
         self.bins = bins
         self.uniform_calibration_prediction()
         self.quantile_calibration_prediction()

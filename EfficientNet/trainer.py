@@ -22,8 +22,8 @@ class ClassificationTrainer(Trainer):
     wrong_indices = []
 
     # overwrites Trainer method
-    def test(self, on='test', prob='book'):
-        super().test(on=on)  # stored in RAM
+    def test(self, partition='test', prob='book'):
+        super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
             self.test_probs = torch.sigmoid(y)
