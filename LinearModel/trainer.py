@@ -8,9 +8,9 @@ from losses import get_loss
 class ClassificationTrainer(Trainer):
     quiet_mode = True
 
-    def __init__(self, model, loss, exp_name, block_args):
-        super().__init__(model, loss, exp_name, **block_args)
-        self._loss = get_loss(loss)
+    def __init__(self, model, loss_name, exp_name, block_args):
+        super().__init__(model, exp_name, **block_args)
+        self._loss = get_loss(loss_name)
         self.test_probs = None
         self.targets = None
         self.test_pred = None
