@@ -7,7 +7,7 @@ class CELoss:
     def loss(self, outputs, targets):
         y = outputs['y']
         CE = F.cross_entropy(y, targets)
-        return {'Criterion': [CE],
+        return {'Criterion': CE,
                 'CE': CE}
 
 
@@ -15,10 +15,11 @@ class MSELoss:
     losses = ['MSE']
 
     def loss(self, outputs, targets):
-        probs = outputs['probs']
+        y = outputs['y']
+        probs = F.softmax(y, dim=-1)
         targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
         MSE = ((targets - probs) ** 2).sum()
-        return {'Criterion': [MSE],
+        return {'Criterion': MSE,
                 'MSE': MSE,
                 }
 
@@ -27,12 +28,13 @@ class NaiveBettingLoss:
     losses = ['Naive']
 
     def loss(self, outputs, inputs, targets):
-        probs = outputs['probs']
+        y = outputs['y']
+        probs = F.softmax(y, dim=-1)
         #  counteracts bias in loss
         # probs = (probs + 1/self.model.num_classes) / 2
         targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
         naive = ((1 / self.model.num_classes - probs) * (targets - probs)).sum()
-        return {'Criterion': [naive],
+        return {'Criterion': naive,
                 'Naive': naive}
 
 
@@ -55,13 +57,12 @@ class BettingLoss:
         CEp = F.cross_entropy(y, targets)
         CEq = F.cross_entropy(yhat, targets)
         targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
-        probs = outputs['probs']
+        probs = F.softmax(y, dim=-1)
+        q = F.softmax(yhat, dim=-1)
         p_detached = probs.detach()
-        q = outputs['q']
         bettor_loss = ((q - p_detached) * (p_detached - targets - eps)).sum()
         book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
-        backprop = [book_loss, bettor_loss]
-        return {'Criterion': backprop,
+        return {'Criterion': book_loss + bettor_loss,
                 'Book Loss': book_loss,
                 'Bettor Loss': bettor_loss,
                 'CEp': CEp,
@@ -77,12 +78,11 @@ class BettingCrossEntropyLoss(BettingLoss):
         CEp = F.cross_entropy(y, targets)
         CEq = F.cross_entropy(yhat, targets)
         targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
-        probs = outputs['probs']
-        q = outputs['q']
+        probs = F.softmax(y, dim=-1)
+        q = F.softmax(yhat, dim=-1)
         bettor_loss = CEq
         book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
-        backprop = [book_loss, bettor_loss]
-        return {'Criterion': backprop,
+        return {'Criterion': book_loss + bettor_loss,
                 'Book Loss': book_loss,
                 'Bettor Loss': bettor_loss,
                 'CEp': CEp,

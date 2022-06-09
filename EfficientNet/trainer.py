@@ -1,25 +1,25 @@
+import torch
+import time
+import math
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from Utils.trainer import Trainer
-from losses import get_loss
-
 
 class ClassificationTrainer(Trainer):
     quiet_mode = True
 
-    def __init__(self, model, loss, exp_name, block_args):
-        super().__init__(model, loss, exp_name, **block_args)
-        self._loss = get_loss(loss)
+    def __init__(self, model, exp_name, block_args):
+        super().__init__(model, exp_name, **block_args)
         self.test_probs = None
         self.targets = None
         self.test_pred = None
         self.bins = None
-        self.wrong_indices = []
+        self.wrong_indices == []
+
         return
 
-    def loss(self, output, inputs, targets):
-        return self._loss(output, targets)
+    wrong_indices = []
 
     # overwrites Trainer method
     def test(self, on='test', prob='book'):
@@ -72,7 +72,8 @@ class ClassificationTrainer(Trainer):
         # Must inverse the prediction for p < 0.5
         class1_hist = np.where(confidence > 0.5, right_hist, hist - right_hist)
         # Empty bins are given expected probability
-        obs_prob = np.divide(class1_hist, hist, out=np.zeros(self.bins), where=hist != 0)
+        obs_prob = np.divide(class1_hist, hist, \
+                             out=np.zeros(self.bins), where=hist != 0)
 
         plt.figure(figsize=(30, 6))
         plt.subplot(1, 4, 1)
@@ -129,6 +130,46 @@ class ClassificationTrainer(Trainer):
         print('Quantile ECE: ', ece.item())
         return
 
+    def coverage(self, crossentropy=False):
+        l_test = len(self.test_outputs['probs'])
+
+        if crossentropy:
+            assert 'q' in self.test_outputs.keys(), "valid for betting only"
+
+        err = len(self.wrong_indices) / l_test
+        acc = 1 - err
+        wrong_p = []
+        right_p = []
+        for i in range(l_test):
+            if i in self.wrong_indices:
+                wrong_p.append(self.test_outputs['probs'][i])
+            else:
+                right_p.append(self.test_outputs['probs'][i])
+
+        p = torch.stack(self.test_outputs['probs'])
+        wrong_p = torch.stack(wrong_p)
+        right_p = torch.stack(right_p)
+        pred_p, _ = p.max(dim=1)
+        pred_p, _ = pred_p.sort()
+        pred_wrong_p, _ = wrong_p.max(dim=1)
+        pred_wrong_p, _ = pred_wrong_p.sort()
+        pred_right_p, _ = right_p.max(dim=1)
+        pred_right_p, _ = pred_right_p.sort()
+
+        new_accs_pred = []
+        for i in range(1, 30):
+            thresh = 1 - i / 100
+            new_l_test = int(thresh * l_test)
+            pred_thresh = pred_p[-new_l_test]
+            new_right = (pred_right_p > pred_thresh).sum()
+            new_accs_pred.append(new_right / new_l_test)
+        new_accs_pred = np.array(new_accs_pred)
+        impr_new_accs_pred = new_accs_pred / acc
+        new_errs = 1 - new_accs_pred
+        new_errs_perc = 100 * new_errs / err
+        impr_errs = 100 - new_errs_perc
+        return impr_new_accs_pred, impr_errs
+
     @staticmethod
     def quantile_binning(conf, targets, bins):
         conf, order = conf.sort(dim=0)
@@ -145,5 +186,10 @@ class ClassificationTrainer(Trainer):
         return torch.stack(avg_conf), torch.stack(avg_corr)
 
 
-def get_trainer(model, loss_name, exp_name, block_args):
-    return ClassificationTrainer(model, loss_name, exp_name, block_args)
+def get_trainer(model, exp_name, loss, block_args):
+    Loss = get_loss(loss)
+
+    class FinalTrainer(Loss, ClassificationTrainer):
+        pass
+
+    return FinalTrainer(model, exp_name, block_args)

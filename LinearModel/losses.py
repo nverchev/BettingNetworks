@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class BCELoss:
     losses = ['BCE']
 
-    def loss(self, outputs, inputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         BCE = F.binary_cross_entropy_with_logits(y, targets)
         return {'Criterion': BCE,
@@ -15,7 +15,7 @@ class BCELoss:
 class MSELoss:
     losses = ['MSE', 'BCE']
 
-    def loss(self, outputs, inputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         probs = torch.sigmoid(y)
         MSE = ((targets - probs) ** 2).sum()
@@ -29,7 +29,7 @@ class MSELoss:
 class MAELoss:
     losses = ['MAE', 'BCE']
 
-    def loss(self, outputs, inputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         probs = torch.sigmoid(y)
         MAE = torch.abs(targets - probs).sum()
@@ -43,7 +43,7 @@ class MAELoss:
 class NaiveBetLoss:
     losses = ['Naive', 'BCE']
 
-    def loss(self, outputs, inputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         BCE = F.binary_cross_entropy_with_logits(y, targets)
         probs = torch.sigmoid(y)
@@ -67,7 +67,7 @@ class BettingLoss:
     """
     losses = ['Book Loss', 'Bettor Loss', "BCEp", "BCEq"]
 
-    def loss(self, outputs, inputs, targets, eps=0):
+    def __call__(self, outputs, targets, eps=0):
         y = outputs['y']
         yhat = outputs['yhat']
         BCEp = F.binary_cross_entropy_with_logits(y, targets)
@@ -89,7 +89,7 @@ class BettingLoss:
 class BettingCrossEntropyLoss(BettingLoss):
     losses = ['Book Loss', 'Bettor Loss', "CEp", "CEq"]
 
-    def loss(self, outputs, inputs, targets, eps=0):
+    def __call__(self, outputs, targets, eps=0):
         y = outputs['y']
         yhat = outputs['yhat']
         CEp = F.cross_entropy(y, targets)
@@ -110,11 +110,11 @@ class BettingCrossEntropyLoss(BettingLoss):
 
 def get_loss(class_loss):
     class_loss_dict = {
-        "BCE": BCELoss,
-        "MAE": MAELoss,
-        "MSE": MSELoss,
-        "Naive": NaiveBetLoss,
-        "Betting": BettingLoss,
-        "CrossBet": BettingCrossEntropyLoss,
+        "BCE": BCELoss(),
+        "MAE": MAELoss(),
+        "MSE": MSELoss(),
+        "Naive": NaiveBetLoss(),
+        "Betting": BettingLoss(),
+        "CrossBet": BettingCrossEntropyLoss(),
     }
     return class_loss_dict[class_loss]

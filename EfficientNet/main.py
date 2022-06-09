@@ -30,7 +30,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    loss_name = args.loss
+    loss = args.loss
     classification = args.classification
     noise_data = args.noise_data
     noise_label = args.noise_label
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     train_loader, test_loader = get_dataset(num_weights, batch_size, noise_data, \
                                             noise_label, classification)
-    model = get_model(loss_name)(num_weights)
+    model = get_model(loss)(num_weights)
     optimizer, optim_args = get_opt(opt, initial_learning_rate, weight_decay)
     block_args = {
         'optim_name': opt,
