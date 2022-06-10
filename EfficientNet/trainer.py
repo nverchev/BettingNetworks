@@ -3,9 +3,13 @@ import torch
 import matplotlib.pyplot as plt
 from Utils.trainer import Trainer
 from losses import get_loss
+from sklearn import metrics
+import torch.nn.functional as F
 
 
 class ClassificationTrainer(Trainer):
+    _metrics = {}
+    average = "macro"
     quiet_mode = True
     bin = 'bettingnetworksefficient'
 
@@ -36,46 +40,63 @@ class ClassificationTrainer(Trainer):
             self.test_probs = torch.sigmoid(yhat)
         else:
             raise ValueError('prob = ' + prob + ' not defined')
-        self.test_pred = torch.where(self.test_probs > .5, 1, 0)
+        if self.num_classes == 1:
+        self.test_pred = torch.argmax(self.test_probs, dim = 1)
         self.targets = torch.stack(self.test_targets)
         right_pred = (self.test_pred == self.targets)
-        self.wrong_indices = torch.nonzero(~right_pred)[:, 0]
-        acc = 1 - self.wrong_indices.size()[0] / self.targets.size()[0]
-        weights_err = self.get_weights_err()
-        if not self.quiet_mode:
-            print('Accuracy' + f' : {100 * acc:.4f}', end='\t')
-            print(f"MSE with true model weights: {weights_err: .2f}")
-        return acc, weights_err
+        self.wrong_indices = torch.nonzero(~right_pred).squeeze()
+        self.calculate_metrics()
+        return
 
-    def get_weights_err(self):
-        infer_weights = self.model.state_dict()['lin.weight'].squeeze()
-        infer_weights = torch.hstack([self.model.state_dict()['lin.bias'], infer_weights])
-        infer_weights = infer_weights / (infer_weights ** 2).sum()
-        target_weights = self.train_loader.dataset.weights.to(self.device)
-        weights_err = ((infer_weights - target_weights) ** 2).sum()
-        return weights_err
+    @property
+    def metrics(self):
+        self.test(partition='val')
+        return self._metrics
+
+    def calculate_metrics(self, print_flag=True):
+
+        avg_type = self.average.capitalize() + ' ' if self.test_probs.size(1) > 1 else ""
+        # calculates common and also gives back the indices of the wrong guesses
+
+        self._metrics['Accuracy'] = \
+            metrics.accuracy_score(self.targets, self.test_pred)
+        self._metrics[avg_type + 'F1 Score'] = \
+            metrics.f1_score(self.targets, self.test_pred, average=self.average)
+        self._metrics[avg_type + 'Jaccard Score'] = \
+            metrics.jaccard_score(self.targets,
+                                  self.test_pred, average=self.average)
+        self._metrics[avg_type + 'AUC ROC'] = \
+            metrics.roc_auc_score(self.targets, self.test_probs,
+                                  average=self.average, multi_class='ovr')
+        if print_flag:
+            for metric, value in self._metrics.items():
+                print(metric + f' : {value:.4f}', end='\t')
+            print('')
+        return
 
     def prob_analysis(self, partition='val', bins=100, prob='book'):  # call after test
-        print(self.exp_name)
+        self.bins = bins
+        print(self.version)
         if len(self.wrong_indices) == 0:
             self.test(partition=partition, prob=prob)
-        self.bins = bins
         self.uniform_calibration_prediction()
+        self.uniform_calibration()
         self.quantile_calibration_prediction()
+        self.quantile_calibration()
+
 
     def uniform_calibration_prediction(self):
-
         confidence = np.linspace(1 / (2 * self.bins), 1 - 1 / (2 * self.bins), self.bins)
-        wrong_conf = self.test_probs[self.wrong_indices]
-        hist = torch.histc(self.test_probs, bins=self.bins, min=0, max=1)
+        highest_conf = torch.max(self.test_probs, dim=1)[0]
+        wrong_conf = highest_conf[self.wrong_indices]
+        hist = torch.histc(highest_conf, bins=self.bins, min=0, max=1)
         wrong_hist = torch.histc(wrong_conf, bins=self.bins, min=0, max=1)
         right_hist = hist - wrong_hist
-        # Must inverse the prediction for p < 0.5
-        class1_hist = np.where(confidence > 0.5, right_hist, hist - right_hist)
-        # Empty bins are given expected probability
-        obs_prob = np.divide(class1_hist, hist, \
-                             out=np.zeros(self.bins), where=hist != 0)
 
+        # Empty bins are given expected probability
+        obs_prob = np.divide(right_hist, hist, \
+                             out=np.zeros(self.bins), where=hist != 0)
+        print('Max confidence')
         plt.figure(figsize=(30, 6))
         plt.subplot(1, 4, 1)
         plt.bar(confidence, hist / hist.sum(), width=.9 / self.bins)
@@ -83,7 +104,6 @@ class ClassificationTrainer(Trainer):
         plt.title('confidence distribution')
 
         plt.subplot(1, 4, 2)
-
         plt.bar(confidence, wrong_hist / wrong_hist.sum(), width=.9 / self.bins)
         plt.title('misclassified by conf (normalized)')
         plt.xticks(np.linspace(0, 1, 5), np.linspace(0, 1, 5))
@@ -103,14 +123,32 @@ class ClassificationTrainer(Trainer):
 
         nonzero = np.nonzero(hist)
         ece = np.abs(obs_prob[nonzero] - confidence[nonzero]).mean()
-        print('ECE: ', ece.item())
+        print('ECE_pred: ', ece.item())
+
+    def uniform_calibration(self):
+        confidence = np.linspace(1 / (2 * self.bins), 1 - 1 / (2 * self.bins), self.bins)
+        ece = 0
+        for cls in range(self.model.num_classes):
+            conf = self.test_probs[:, cls]
+            right_indices = torch.nonzero(self.targets == cls)
+            right_conf = conf[right_indices]
+            hist = torch.histc(conf, bins=self.bins, min=0, max=1)
+            right_hist = torch.histc(right_conf, bins=self.bins, min=0, max=1)
+            nonzero = np.nonzero(hist)
+            obs_prob = np.divide(right_hist, hist, where=hist != 0)
+            ece += torch.abs(obs_prob[nonzero] - confidence[nonzero]).mean()
+
+        targets = F.one_hot(self.targets, num_classes=self.model.num_classes).float()
+        brier_multi = torch.mean(torch.sum((self.test_probs - targets) ** 2, axis=1))
+        print('ECE: ', (ece / self.model.num_classes).item(), ' Brier Score: ', brier_multi.item())
+        return
 
     def quantile_calibration_prediction(self):
-        right_conf = torch.ones_like(self.test_probs)
+        highest_conf = torch.max(self.test_probs, dim=1)[0]
+        right_conf = torch.ones_like(highest_conf)
         right_conf[self.wrong_indices] = 0
-        print(f'Brier Score: {torch.mean((self.test_probs - right_conf) ** 2):.2f}')
-        confidence, obs_prob = self.quantile_binning(self.test_probs, right_conf, self.bins)
-        obs_prob = torch.where(confidence > 0.5, obs_prob, 1 - obs_prob)
+        confidence, obs_prob = self.quantile_binning(highest_conf, right_conf, self.bins)
+        print('Max conf quantile')
         plt.figure(figsize=(30, 6))
         plt.subplot(1, 2, 1)
         plt.title('frequency probability by conf')
@@ -122,14 +160,25 @@ class ClassificationTrainer(Trainer):
         plt.title('frequency probability by conf (remapped)')
         plt.bar(np.linspace(0, 1, self.bins), 1, width=.9 / self.bins, color='w', edgecolor='b', alpha=0.3)
         plt.bar(np.linspace(0, 1, self.bins), obs_prob, width=.9 / self.bins)
-        ticks = [round(confidence[i].item(), 2) for i in range(0, self.bins, self.bins // 4)]
-        plt.xticks(np.linspace(0, 1, 5), ticks + [round(confidence[-1].item(), 2)])
+        plt.xticks(np.linspace(0, 1, 5), [round(confidence[i].item(), 2) for i in range(0, self.bins, self.bins // 5)])
         plt.plot(np.linspace(0, 1, self.bins), confidence, color="seagreen")
         plt.show()
 
         ece = np.abs(obs_prob - confidence).mean()
-        print('Quantile ECE: ', ece.item())
+        print('Quantile ECE_pred: ', ece.item())
         return
+
+    def quantile_calibration(self):
+        ece = 0
+        for cls in range(self.model.num_classes):
+            conf = self.test_probs[:, cls]
+            right_conf = (self.targets == cls).float()
+            confidence, obs_prob = self.quantile_binning(conf, right_conf, self.bins)
+            ece += np.abs(obs_prob - confidence).mean()
+        print('Quantile ECE: ', (ece / self.model.num_classes).item())
+        return
+
+
 
     def coverage(self, crossentropy=False):
         l_test = len(self.test_outputs['probs'])
@@ -173,8 +222,8 @@ class ClassificationTrainer(Trainer):
 
     @staticmethod
     def quantile_binning(conf, targets, bins):
-        conf, order = conf.sort(dim=0)
-        targets = targets[order].view(-1, 1)
+        conf, order = conf.sort()
+        targets = targets[order]
         tensor = torch.hstack([conf, targets])
         N = tensor.size(0)
         # to cover the case where bins divide N, we add and subtract 1
