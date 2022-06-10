@@ -4,7 +4,8 @@ from torch.utils.data import Dataset
 from dataset import get_dataset
 from model import get_model
 from trainer import get_trainer
-from Utils.optim import get_opt, CosineSchedule
+from optimisation import get_opt
+from Utils.Scheduling import CosineSchedule
 
 
 def parse_args():
