@@ -186,5 +186,5 @@ class ClassificationTrainer(Trainer):
         return torch.stack(avg_conf), torch.stack(avg_corr)
 
 
-def get_trainer(model, exp_name, loss_name, block_args):
+def get_trainer(model, loss_name, exp_name, block_args):
     return ClassificationTrainer(model, loss_name, exp_name, block_args)
