@@ -8,17 +8,18 @@ from losses import get_loss
 class ClassificationTrainer(Trainer):
     quiet_mode = True
 
-    def __init__(self, model, exp_name, block_args):
+    def __init__(self, model, loss_name, exp_name, block_args):
         super().__init__(model, exp_name, **block_args)
+        self._loss = get_loss(loss_name)
         self.test_probs = None
         self.targets = None
         self.test_pred = None
         self.bins = None
-        self.wrong_indices == []
-
+        self.wrong_indices = []
         return
 
-    wrong_indices = []
+    def loss(self, output, inputs, targets):
+        return self._loss(output, targets)
 
     # overwrites Trainer method
     def test(self, partition='test', prob='book'):
@@ -53,10 +54,10 @@ class ClassificationTrainer(Trainer):
         weights_err = ((infer_weights - target_weights) ** 2).sum()
         return weights_err
 
-    def prob_analysis(self, on='val', bins=100, prob='book'):  # call after test
+    def prob_analysis(self, partition='val', bins=100, prob='book'):  # call after test
         print(self.exp_name)
         if len(self.wrong_indices) == 0:
-            self.test(on=on, prob=prob)
+            self.test(partition=partition, prob=prob)
         self.bins = bins
         self.uniform_calibration_prediction()
         self.quantile_calibration_prediction()
@@ -185,10 +186,5 @@ class ClassificationTrainer(Trainer):
         return torch.stack(avg_conf), torch.stack(avg_corr)
 
 
-def get_trainer(model, exp_name, loss, block_args):
-    Loss = get_loss(loss)
-
-    class FinalTrainer(Loss, ClassificationTrainer):
-        pass
-
-    return FinalTrainer(model, exp_name, block_args)
+def get_trainer(model, exp_name, loss_name, block_args):
+    return ClassificationTrainer(model, loss_name, exp_name, block_args)
