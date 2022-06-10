@@ -10,7 +10,6 @@ import torch.nn.functional as F
 class ClassificationTrainer(Trainer):
     _metrics = {}
     average = "macro"
-    quiet_mode = True
     bin = 'bettingnetworksefficient'
 
     def __init__(self, model, loss_name, exp_name, block_args):
