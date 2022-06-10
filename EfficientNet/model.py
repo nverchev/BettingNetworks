@@ -266,8 +266,6 @@ class BettingNetworksTwoHeaded(EfficientNet):
         q = F.softmax(yhat, dim=1)
         return {'y': y,
                 'yhat': yhat,
-                'probs': p,
-                'q': q
                 }
 
 

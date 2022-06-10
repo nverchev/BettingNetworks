@@ -31,17 +31,16 @@ class ClassificationTrainer(Trainer):
         super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
-            self.test_probs = torch.sigmoid(y)
+            self.test_probs = F.softmax(y, dim=-1)
         elif 'q' not in self.test_outputs.keys():
             print('Bettor probabilities not available')
             return
         elif prob == 'bettor':  # bettor probabilities
             yhat = torch.stack(self.test_outputs['yhat'])
-            self.test_probs = torch.sigmoid(yhat)
+            self.test_probs = F.softmax(yhat, dim=-1)
         else:
             raise ValueError('prob = ' + prob + ' not defined')
-        if self.num_classes == 1:
-        self.test_pred = torch.argmax(self.test_probs, dim = 1)
+        self.test_pred = torch.argmax(self.test_probs, dim=1)
         self.targets = torch.stack(self.test_targets)
         right_pred = (self.test_pred == self.targets)
         self.wrong_indices = torch.nonzero(~right_pred).squeeze()
@@ -83,7 +82,6 @@ class ClassificationTrainer(Trainer):
         self.uniform_calibration()
         self.quantile_calibration_prediction()
         self.quantile_calibration()
-
 
     def uniform_calibration_prediction(self):
         confidence = np.linspace(1 / (2 * self.bins), 1 - 1 / (2 * self.bins), self.bins)
@@ -177,8 +175,6 @@ class ClassificationTrainer(Trainer):
             ece += np.abs(obs_prob - confidence).mean()
         print('Quantile ECE: ', (ece / self.model.num_classes).item())
         return
-
-
 
     def coverage(self, crossentropy=False):
         l_test = len(self.test_outputs['probs'])
