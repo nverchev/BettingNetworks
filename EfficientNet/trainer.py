@@ -74,7 +74,7 @@ class ClassificationTrainer(Trainer):
 
     def prob_analysis(self, partition='val', bins=100, prob='book'):  # call after test
         self.bins = bins
-        print(self.version)
+        print(self.exp_name)
         if len(self.wrong_indices) == 0:
             self.test(partition=partition, prob=prob)
         self.uniform_calibration_prediction()
