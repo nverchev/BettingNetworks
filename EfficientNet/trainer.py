@@ -7,6 +7,7 @@ from losses import get_loss
 
 class ClassificationTrainer(Trainer):
     quiet_mode = True
+    bin = 'bettingnetworksefficient'
 
     def __init__(self, model, loss_name, exp_name, block_args):
         super().__init__(model, exp_name, **block_args)
