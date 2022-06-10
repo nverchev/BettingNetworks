@@ -24,7 +24,20 @@ class MSELoss:
                 }
 
 
-class NaiveBettingLoss:
+class MAELoss:
+    losses = ['MAE']
+
+    def loss(self, outputs, targets):
+        y = outputs['y']
+        probs = F.softmax(y, dim=-1)
+        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
+        MAE = ((targets - probs) ** 2).sum()
+        return {'Criterion': MAE,
+                'MAE': MAE,
+                }
+
+
+class NaiveBetLoss:
     losses = ['Naive']
 
     def loss(self, outputs, inputs, targets):
@@ -88,3 +101,15 @@ class BettingCrossEntropyLoss(BettingLoss):
                 'CEp': CEp,
                 'CEq': CEq
                 }
+
+
+def get_loss(loss_name):
+    loss_dict = {
+        "BCE": CELoss,
+        "MAE": MAELoss,
+        "MSE": MSELoss,
+        "Naive": NaiveBetLoss,
+        "Betting": BettingLoss,
+        "CrossBet": BettingCrossEntropyLoss,
+    }
+    return loss_dict[loss_name]()

@@ -108,13 +108,13 @@ class BettingCrossEntropyLoss(BettingLoss):
                 }
 
 
-def get_loss(class_loss):
-    class_loss_dict = {
-        "BCE": BCELoss(),
-        "MAE": MAELoss(),
-        "MSE": MSELoss(),
-        "Naive": NaiveBetLoss(),
-        "Betting": BettingLoss(),
-        "CrossBet": BettingCrossEntropyLoss(),
+def get_loss(loss_name):
+    loss_dict = {
+        "BCE": BCELoss,
+        "MAE": MAELoss,
+        "MSE": MSELoss,
+        "Naive": NaiveBetLoss,
+        "Betting": BettingLoss,
+        "CrossBet": BettingCrossEntropyLoss,
     }
-    return class_loss_dict[class_loss]
+    return loss_dict[loss_name]()

@@ -1,10 +1,9 @@
-import torch
-import time
-import math
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from Utils.trainer import Trainer
+from losses import get_loss
+
 
 class ClassificationTrainer(Trainer):
     quiet_mode = True
