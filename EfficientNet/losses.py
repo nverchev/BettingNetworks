@@ -4,7 +4,7 @@ import torch.nn.functional as F
 class CELoss:
     losses = ['CE']
 
-    def loss(self, outputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         CE = F.cross_entropy(y, targets)
         return {'Criterion': CE,
@@ -14,7 +14,7 @@ class CELoss:
 class MSELoss:
     losses = ['MSE']
 
-    def loss(self, outputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         probs = F.softmax(y, dim=-1)
         targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
@@ -27,7 +27,7 @@ class MSELoss:
 class MAELoss:
     losses = ['MAE']
 
-    def loss(self, outputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         probs = F.softmax(y, dim=-1)
         targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
@@ -40,7 +40,7 @@ class MAELoss:
 class NaiveBetLoss:
     losses = ['Naive']
 
-    def loss(self, outputs, inputs, targets):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         probs = F.softmax(y, dim=-1)
         #  counteracts bias in loss
@@ -64,7 +64,7 @@ class BettingLoss:
 
     losses = ['Book Loss', 'Bettor Loss', "CEp", "CEq"]
 
-    def loss(self, outputs, inputs, targets, eps=0):
+    def __call__(self, outputs, targets, eps=0):
         y = outputs['y']
         yhat = outputs['yhat']
         CEp = F.cross_entropy(y, targets)
@@ -85,7 +85,7 @@ class BettingLoss:
 
 class BettingCrossEntropyLoss(BettingLoss):
 
-    def loss(self, outputs, inputs, targets, eps=0):
+    def __call__(self, outputs, targets, eps=0):
         y = outputs['y']
         yhat = outputs['yhat']
         CEp = F.cross_entropy(y, targets)
