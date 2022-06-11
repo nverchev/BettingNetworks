@@ -26,15 +26,14 @@ class ClassificationTrainer(Trainer):
         super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
-            self.test_probs = torch.sigmoid(y)
         elif 'q' not in self.test_outputs.keys():
             print('Bettor probabilities not available')
             return
         elif prob == 'bettor':  # bettor probabilities
-            yhat = torch.stack(self.test_outputs['yhat'])
-            self.test_probs = torch.sigmoid(yhat)
+            y = torch.stack(self.test_outputs['yhat'])
         else:
             raise ValueError('prob = ' + prob + ' not defined')
+        self.test_probs = torch.sigmoid(y).squeeze()
         self.test_pred = torch.where(self.test_probs > .5, 1, 0)
         self.targets = torch.stack(self.test_targets)
         right_pred = (self.test_pred == self.targets)
