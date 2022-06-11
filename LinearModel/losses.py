@@ -94,9 +94,8 @@ class BettingCrossEntropyLoss(BettingLoss):
         yhat = outputs['yhat']
         CEp = F.cross_entropy(y, targets)
         CEq = F.cross_entropy(yhat, targets)
-        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
-        probs = outputs['probs']
-        q = outputs['q']
+        probs = torch.sigmoid(y)
+        q = torch.sigmoid(yhat)
         bettor_loss = CEq
         book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
         backprop = book_loss + bettor_loss
