@@ -217,14 +217,13 @@ class ClassificationTrainer(Trainer):
 
     @staticmethod
     def quantile_binning(conf, targets, bins):
-        conf, order = conf.sort()
+        conf, order = conf.sort(dim=0)
         targets = targets[order]
-        tensor = torch.hstack([conf, targets])
+        tensor = torch.vstack([conf, targets]).t()
         N = tensor.size(0)
-        # to cover the case where bins divide N, we add and subtract 1
-        large_bins, small_bin = divmod(N + 1, bins - 1)
+        large_bins, small_bin = divmod(N, bins - 1)
         avg_conf, avg_corr = [], []
-        for t in tensor.split((bins - 1) * [large_bins] + [small_bin - 1]):
+        for t in tensor.split((bins - 1) * [large_bins] + [small_bin]):
             aconf, acorr = t.mean(axis=0)
             avg_conf.append(aconf)
             avg_corr.append(acorr)
