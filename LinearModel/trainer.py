@@ -54,10 +54,10 @@ class ClassificationTrainer(Trainer):
         weights_err = ((infer_weights - target_weights) ** 2).sum()
         return weights_err
 
-    def prob_analysis(self, on='val', bins=100, prob='book'):  # call after test
+    def prob_analysis(self, partition='val', bins=100, prob='book'):  # call after test
         print(self.exp_name)
         if len(self.wrong_indices) == 0:
-            self.test(partition=on, prob=prob)
+            self.test(partition=partition, prob=prob)
         self.bins = bins
         self.uniform_calibration_prediction()
         self.quantile_calibration_prediction()
