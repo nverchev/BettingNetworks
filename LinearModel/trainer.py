@@ -35,7 +35,7 @@ class ClassificationTrainer(Trainer):
             raise ValueError('prob = ' + prob + ' not defined')
         self.test_probs = torch.sigmoid(y).squeeze()
         self.test_pred = torch.where(self.test_probs > .5, 1, 0)
-        self.targets = torch.stack(self.test_targets)
+        self.targets = torch.stack(self.test_targets).squeeze()
         right_pred = (self.test_pred == self.targets)
         self.wrong_indices = torch.nonzero(~right_pred)
         acc = 1 - self.wrong_indices.size()[0] / self.targets.size()[0]
