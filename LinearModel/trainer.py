@@ -26,7 +26,7 @@ class ClassificationTrainer(Trainer):
         super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
-        elif 'q' not in self.test_outputs.keys():
+        elif 'yhat' not in self.test_outputs.keys():
             print('Bettor probabilities not available')
             return
         elif prob == 'bettor':  # bettor probabilities
@@ -37,7 +37,7 @@ class ClassificationTrainer(Trainer):
         self.test_pred = torch.where(self.test_probs > .5, 1, 0)
         self.targets = torch.stack(self.test_targets)
         right_pred = (self.test_pred == self.targets)
-        self.wrong_indices = torch.nonzero(~right_pred)[:, 0]
+        self.wrong_indices = torch.nonzero(~right_pred)
         acc = 1 - self.wrong_indices.size()[0] / self.targets.size()[0]
         weights_err = self.get_weights_err()
         if not self.quiet_mode:

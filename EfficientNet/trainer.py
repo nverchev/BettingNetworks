@@ -30,15 +30,14 @@ class ClassificationTrainer(Trainer):
         super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
-            self.test_probs = F.softmax(y, dim=-1)
-        elif 'q' not in self.test_outputs.keys():
+        elif 'yhat' not in self.test_outputs.keys():
             print('Bettor probabilities not available')
             return
         elif prob == 'bettor':  # bettor probabilities
-            yhat = torch.stack(self.test_outputs['yhat'])
-            self.test_probs = F.softmax(yhat, dim=-1)
+            y = torch.stack(self.test_outputs['yhat'])
         else:
             raise ValueError('prob = ' + prob + ' not defined')
+        self.test_probs = F.softmax(y, dim=-1)
         self.test_pred = torch.argmax(self.test_probs, dim=1)
         self.targets = torch.stack(self.test_targets)
         right_pred = (self.test_pred == self.targets)
