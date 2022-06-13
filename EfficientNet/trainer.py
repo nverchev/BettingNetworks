@@ -10,8 +10,9 @@ class ClassificationTrainer(Trainer):
     bin = 'bettingnetworksefficient'
 
     def __init__(self, model, loss_name, exp_name, block_args):
-        super().__init__(model, exp_name, **block_args)
         self._loss = get_loss(loss_name)
+        self.losses = self._loss.losses  # losses must be defined before super().__init__()
+        super().__init__(model, exp_name, **block_args)
         self.test_probs = None
         self.targets = None
         self.test_pred = None
