@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+import wget
 
 from collections import OrderedDict
 
@@ -278,7 +279,13 @@ def get_model(model_name, experiment, dir_path="./"):
     num_classes = 50 if experiment.split("./") == "imbalanced" else 100
     model = model_class[model_name](num_classes=num_classes)
     efficient_path = os.path.join(dir_path, 'efficientnet_pretrained')
-    B0_state = torch.load(os.path.join(efficient_path, "efficientnet-b0-08094119.pth"))
+    os.makedirs(efficient_path, exist_ok=True)
+    efficient_weights = os.path.join(efficient_path, "efficientnet-b0-08094119.pth")
+    if not os.path.exists(efficient_weights):
+        import wget
+        url = 'http://storage.googleapis.com/public-models/efficientnet-b0-08094119.pth'
+        wget.download(url, out= efficient_path)
+    B0_state = torch.load(efficient_weights)
 
     # A basic remapping is required
     mapping = {

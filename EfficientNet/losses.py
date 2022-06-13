@@ -17,7 +17,7 @@ class MSELoss:
     def __call__(self, outputs, targets):
         y = outputs['y']
         probs = F.softmax(y, dim=-1)
-        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
+        targets = F.one_hot(targets, num_classes=self.num_classes).float()
         MSE = ((targets - probs) ** 2).sum()
         return {'Criterion': MSE,
                 'MSE': MSE,
@@ -30,7 +30,7 @@ class MAELoss:
     def __call__(self, outputs, targets):
         y = outputs['y']
         probs = F.softmax(y, dim=-1)
-        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
+        targets = F.one_hot(targets, num_classes=self.num_classes).float()
         MAE = ((targets - probs) ** 2).sum()
         return {'Criterion': MAE,
                 'MAE': MAE,
@@ -44,9 +44,9 @@ class NaiveBetLoss:
         y = outputs['y']
         probs = F.softmax(y, dim=-1)
         #  counteracts bias in loss
-        # probs = (probs + 1/self.model.num_classes) / 2
-        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
-        naive = ((1 / self.model.num_classes - probs) * (targets - probs)).sum()
+        # probs = (probs + 1/self.num_classes) / 2
+        targets = F.one_hot(targets, num_classes=self.num_classes).float()
+        naive = ((1 / self.num_classes - probs) * (targets - probs)).sum()
         return {'Criterion': naive,
                 'Naive': naive}
 
@@ -69,7 +69,7 @@ class BettingLoss:
         yhat = outputs['yhat']
         CEp = F.cross_entropy(y, targets)
         CEq = F.cross_entropy(yhat, targets)
-        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
+        targets = F.one_hot(targets, num_classes=self.num_classes).float()
         probs = F.softmax(y, dim=-1)
         q = F.softmax(yhat, dim=-1)
         p_detached = probs.detach()

@@ -5,6 +5,8 @@ from dataset import get_dataset
 from model import get_model
 from trainer import get_trainer
 from optimisation import get_opt
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Utils.Scheduling import CosineSchedule
 
 
@@ -15,7 +17,7 @@ def parse_args():
                         choices=['BaselineClassifier', 'BettingNetworks', 'BettingNetworksTwoHeaded'])
     parser.add_argument('--loss', default='CE', choices=["CE", "MAE", "MSE", "Naive", "Betting"])
     parser.add_argument('--dir_path', type=str, default='./', help='Directory for storing data and models')
-    parser.add_argument('--exp_name', type=str, default='', help='Name of the experiment.')
+    parser.add_argument('--experiment', type=str, default='', help='Name of the experiment.')
     parser.add_argument('--eval', type=bool, default=False,
                         help='evaluate the model (exp_name needs to start with "final")')
     parser.add_argument('--epochs', default=60, type=int, help='number of epoch in training')
@@ -51,10 +53,10 @@ if __name__ == '__main__':
             secret_key = secret_key.strip()
             minioClient = Minio(server, access_key=access_key, secret_key=secret_key, secure=True)
     else:
-        minio_credential = None
+        minioClient = None
 
     device = torch.device("cuda:0" if torch.cuda.is_available() and args.cuda else "cpu")
-    train_loader, val_loader, test_loader = get_dataset(experiment, batch_size, dirpath="./")
+    train_loader, val_loader, test_loader = get_dataset(experiment, batch_size, dir_path=dir_path)
     optimizer, optim_args = get_opt(model_name, opt, learning_rate, weight_decay)
     block_args = {
         'optim_name': opt,
@@ -73,7 +75,7 @@ if __name__ == '__main__':
         if not isinstance(v, (type, torch.utils.data.dataloader.DataLoader)):
             print(k, ': ', v)
 
-    model = get_model(model_name, experiment)
+    model = get_model(model_name, experiment, dir_path=dir_path)
     exp_name = '_'.join([model_name, experiment])
     trainer = get_trainer(model, loss_name, exp_name, block_args)
 

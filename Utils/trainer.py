@@ -168,11 +168,12 @@ class Trainer(metaclass=ABCMeta):
                 self.test_targets.extend(self.to_recursive(targets, 'detach_cpu'))
             if not self.quiet_mode and partition == 'train':
                 if batch_idx % (len(loader) // 10 or 1) == 0:
-                    iterable.set_description(
+                    iterable.write(
                         'Train [{:4d}/{:4d} ]\tLoss {:4f}'.format(
                             batch_idx * loader.batch_size,
                             len_sess,
-                            criterion.item())
+                            criterion.item(),
+                            end="\r")
                     )
                 if batch_idx == len(loader) - 1:  # clear after last
                     iterable.set_description('')

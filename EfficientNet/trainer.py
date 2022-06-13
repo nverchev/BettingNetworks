@@ -1,11 +1,12 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from Utils.trainer import Trainer
 from losses import get_loss
 from sklearn import metrics
 import torch.nn.functional as F
-
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from Utils.trainer import Trainer
 
 class ClassificationTrainer(Trainer):
     _metrics = {}
@@ -16,6 +17,7 @@ class ClassificationTrainer(Trainer):
         self._loss = get_loss(loss_name)
         self.losses = self._loss.losses  # losses must be defined before super().__init__()
         super().__init__(model, exp_name, **block_args)
+        self._loss.num_classes = self.model.num_classes
         self.test_probs = None
         self.targets = None
         self.test_pred = None
