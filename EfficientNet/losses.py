@@ -105,7 +105,7 @@ class BettingCrossEntropyLoss(BettingLoss):
 
 def get_loss(loss_name):
     loss_dict = {
-        "BCE": CELoss,
+        "CE": CELoss,
         "MAE": MAELoss,
         "MSE": MSELoss,
         "Naive": NaiveBetLoss,
