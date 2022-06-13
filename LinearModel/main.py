@@ -11,7 +11,7 @@ from Utils.Scheduling import CosineSchedule
 def parse_args():
     """Parameters"""
     parser = argparse.ArgumentParser('training')
-    parser.add_argument('--loss', default='BCELoss', choices=["BCE", "MAE", "MSE", "Naive", "Betting"])
+    parser.add_argument('--loss', default='BCELoss', choices=["BCE", "MAE", "MSE", "HuberLoss", "Naive", "Betting"])
     parser.add_argument('--classification', type=bool, default=True, help='classification setup')
     parser.add_argument('--num_weights', type=int, default=64, help='weights of the linear models')
     parser.add_argument('--noise_data', type=float, default=0., help='standard deviation noise samples')

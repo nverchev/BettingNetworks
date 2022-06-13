@@ -40,6 +40,21 @@ class MAELoss:
                 }
 
 
+class HuberLoss:
+    huber_loss = torch.nn.HuberLoss("sum", delta=0.3)
+    losses = ['Huber', 'BCE']
+
+    def __call__(self, outputs, targets):
+        y = outputs['y']
+        probs = torch.sigmoid(y)
+        Huber = self.huber_loss(probs, targets)
+        BCE = F.binary_cross_entropy_with_logits(y, targets)
+        return {'Criterion': Huber,
+                'Huber': Huber,
+                'BCE': BCE
+                }
+
+
 class NaiveBetLoss:
     losses = ['Naive', 'BCE']
 
@@ -93,5 +108,6 @@ def get_loss(loss_name):
         "MSE": MSELoss,
         "Naive": NaiveBetLoss,
         "Betting": BettingLoss,
+        "Huber": HuberLoss,
     }
     return loss_dict[loss_name]()
