@@ -30,7 +30,7 @@ test_transform = A.Compose([
 ])
 
 
-def get_dataset(experiment, batch_size, dirpath="./", Loader=True):
+def get_dataset(experiment, batch_size, dir_path="./", Loader=True):
     experiment_strings = experiment.split("_")
     final = experiment_strings[0] == 'final'
     noised_label_perc = 0
@@ -44,7 +44,7 @@ def get_dataset(experiment, batch_size, dirpath="./", Loader=True):
         if experiment_strings[-2] == "light":
             noised_label_perc = 1
     class_imbalanced = experiment_strings[-1] == "imbalanced"
-    data_path = os.path.join(dirpath, 'Cifar100')
+    data_path = os.path.join(dir_path, 'Cifar100')
     split = 1 / 6
     pin_memory = torch.cuda.is_available()
     train_dataset = CIFAR100(root=data_path, train=True, transform=A_transform(train_transform), download=Loader)
