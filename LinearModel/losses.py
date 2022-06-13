@@ -41,7 +41,7 @@ class MAELoss:
 
 
 class HuberLoss:
-    huber_loss = torch.nn.HuberLoss("sum", delta=0.3)
+    huber_loss = torch.nn.HuberLoss("sum", delta=0.1)
     losses = ['Huber', 'BCE']
 
     def __call__(self, outputs, targets):
