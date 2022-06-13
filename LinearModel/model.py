@@ -27,4 +27,4 @@ class BettingLinearModel(nn.Module):
 
 
 def get_model(loss):
-    return BettingLinearModel if loss == 'Betting' else LinearModel
+    return BettingLinearModel if loss in ['Betting' 'CrossBet'] else LinearModel

@@ -27,19 +27,18 @@ class ClassificationTrainer(Trainer):
         super().test(partition=partition)  # stored in RAM
         if prob == 'book':  # standard or book probabilities
             y = torch.stack(self.test_outputs['y'])
-            self.test_probs = torch.sigmoid(y)
-        elif 'q' not in self.test_outputs.keys():
+        elif 'yhat' not in self.test_outputs.keys():
             print('Bettor probabilities not available')
             return
         elif prob == 'bettor':  # bettor probabilities
-            yhat = torch.stack(self.test_outputs['yhat'])
-            self.test_probs = torch.sigmoid(yhat)
+            y = torch.stack(self.test_outputs['yhat'])
         else:
             raise ValueError('prob = ' + prob + ' not defined')
+        self.test_probs = torch.sigmoid(y).squeeze()
         self.test_pred = torch.where(self.test_probs > .5, 1, 0)
-        self.targets = torch.stack(self.test_targets)
+        self.targets = torch.stack(self.test_targets).squeeze()
         right_pred = (self.test_pred == self.targets)
-        self.wrong_indices = torch.nonzero(~right_pred)[:, 0]
+        self.wrong_indices = torch.nonzero(~right_pred)
         acc = 1 - self.wrong_indices.size()[0] / self.targets.size()[0]
         weights_err = self.get_weights_err()
         if not self.quiet_mode:
@@ -55,10 +54,10 @@ class ClassificationTrainer(Trainer):
         weights_err = ((infer_weights - target_weights) ** 2).sum()
         return weights_err
 
-    def prob_analysis(self, on='val', bins=100, prob='book'):  # call after test
+    def prob_analysis(self, partition='val', bins=100, prob='book'):  # call after test
         print(self.exp_name)
         if len(self.wrong_indices) == 0:
-            self.test(partition=on, prob=prob)
+            self.test(partition=partition, prob=prob)
         self.bins = bins
         self.uniform_calibration_prediction()
         self.quantile_calibration_prediction()
@@ -133,13 +132,12 @@ class ClassificationTrainer(Trainer):
     @staticmethod
     def quantile_binning(conf, targets, bins):
         conf, order = conf.sort(dim=0)
-        targets = targets[order].view(-1, 1)
-        tensor = torch.hstack([conf, targets])
+        targets = targets[order]
+        tensor = torch.vstack([conf, targets]).t()
         N = tensor.size(0)
-        # to cover the case where bins divide N, we add and subtract 1
-        large_bins, small_bin = divmod(N + 1, bins - 1)
+        large_bins, small_bin = divmod(N, bins - 1)
         avg_conf, avg_corr = [], []
-        for t in tensor.split((bins - 1) * [large_bins] + [small_bin - 1]):
+        for t in tensor.split((bins - 1) * [large_bins] + [small_bin]):
             aconf, acorr = t.mean(axis=0)
             avg_conf.append(aconf)
             avg_corr.append(acorr)
