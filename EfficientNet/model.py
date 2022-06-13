@@ -284,7 +284,7 @@ def get_model(model_name, experiment, dir_path="./"):
     if not os.path.exists(efficient_weights):
         url = 'http://storage.googleapis.com/public-models/efficientnet-b0-08094119.pth'
         r = requests.get(url)
-        open(efficient_path, 'wb').write(r.content)
+        open(efficient_weights, 'wb').write(r.content)
 
     B0_state = torch.load(efficient_weights)
 
