@@ -282,7 +282,6 @@ def get_model(model_name, experiment, dir_path="./"):
     os.makedirs(efficient_path, exist_ok=True)
     efficient_weights = os.path.join(efficient_path, "efficientnet-b0-08094119.pth")
     if not os.path.exists(efficient_weights):
-        import wget
         url = 'http://storage.googleapis.com/public-models/efficientnet-b0-08094119.pth'
         wget.download(url, out= efficient_path)
     B0_state = torch.load(efficient_weights)
