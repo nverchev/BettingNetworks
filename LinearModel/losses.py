@@ -87,23 +87,23 @@ class BettingLoss:
 
 
 class BettingCrossEntropyLoss(BettingLoss):
-    losses = ['Book Loss', 'Bettor Loss', "CEp", "CEq"]
+    losses = ['Book Loss', 'Bettor Loss', "BCEp", "BCEq"]
 
     def __call__(self, outputs, targets, eps=0):
         y = outputs['y']
         yhat = outputs['yhat']
-        CEp = F.cross_entropy(y, targets)
-        CEq = F.cross_entropy(yhat, targets)
+        BCEp = F.binary_cross_entropy_with_logits(y, targets)
+        BCEq = F.binary_cross_entropy_with_logits(yhat, targets)
         probs = torch.sigmoid(y)
         q = torch.sigmoid(yhat)
-        bettor_loss = CEq
+        bettor_loss = BCEq
         book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
         backprop = book_loss + bettor_loss
         return {'Criterion': backprop,
                 'Book Loss': book_loss,
                 'Bettor Loss': bettor_loss,
-                'CEp': CEp,
-                'CEq': CEq
+                'BCEp': CEp,
+                'BCEq': CEq
                 }
 
 
