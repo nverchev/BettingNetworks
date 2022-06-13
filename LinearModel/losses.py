@@ -102,8 +102,8 @@ class BettingCrossEntropyLoss(BettingLoss):
         return {'Criterion': backprop,
                 'Book Loss': book_loss,
                 'Bettor Loss': bettor_loss,
-                'BCEp': CEp,
-                'BCEq': CEq
+                'BCEp': BCEp,
+                'BCEq': BCEq
                 }
 
 
