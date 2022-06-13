@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
-import wget
+import requests
 
 from collections import OrderedDict
 
@@ -283,7 +283,9 @@ def get_model(model_name, experiment, dir_path="./"):
     efficient_weights = os.path.join(efficient_path, "efficientnet-b0-08094119.pth")
     if not os.path.exists(efficient_weights):
         url = 'http://storage.googleapis.com/public-models/efficientnet-b0-08094119.pth'
-        wget.download(url, out= efficient_path)
+        r = requests.get(url)
+        open(efficient_path, 'wb').write(r.content)
+
     B0_state = torch.load(efficient_weights)
 
     # A basic remapping is required
