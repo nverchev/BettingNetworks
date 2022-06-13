@@ -279,7 +279,7 @@ def get_model(model_name, experiment, dirpath="./"):
 
     num_classes = 50 if experiment.split("./") == "imbalanced" else 100
     model = model_class[model_name](num_classes=num_classes)
-    efficient_path = os.path.join(dirpath, 'EfficientNet')
+    efficient_path = os.path.join(dirpath, 'efficientnet_pretrained')
     B0_state = torch.load(os.path.join(efficient_path, "efficientnet-b0-08094119.pth"))
 
     # A basic remapping is required
