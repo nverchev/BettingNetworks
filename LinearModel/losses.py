@@ -67,7 +67,7 @@ class BettingLoss:
     """
     losses = ['Book Loss', 'Bettor Loss', "BCEp", "BCEq"]
 
-    def __call__(self, outputs, targets, eps=0):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         yhat = outputs['yhat']
         BCEp = F.binary_cross_entropy_with_logits(y, targets)
@@ -75,29 +75,8 @@ class BettingLoss:
         probs = torch.sigmoid(y)
         q = torch.sigmoid(yhat)
         p_detached = probs.detach()
-        bettor_loss = ((q - p_detached) * (p_detached - targets - eps)).sum()
-        book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
-        backprop = book_loss + bettor_loss
-        return {'Criterion': backprop,
-                'Book Loss': book_loss,
-                'Bettor Loss': bettor_loss,
-                'BCEp': BCEp,
-                'BCEq': BCEq
-                }
-
-
-class BettingCrossEntropyLoss(BettingLoss):
-    losses = ['Book Loss', 'Bettor Loss', "BCEp", "BCEq"]
-
-    def __call__(self, outputs, targets, eps=0):
-        y = outputs['y']
-        yhat = outputs['yhat']
-        BCEp = F.binary_cross_entropy_with_logits(y, targets)
-        BCEq = F.binary_cross_entropy_with_logits(yhat, targets)
-        probs = torch.sigmoid(y)
-        q = torch.sigmoid(yhat)
-        bettor_loss = BCEq
-        book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
+        bettor_loss = ((q - p_detached) * (p_detached - targets)).sum()
+        book_loss = ((q.detach() - probs) * (targets - probs)).sum()
         backprop = book_loss + bettor_loss
         return {'Criterion': backprop,
                 'Book Loss': book_loss,
@@ -114,6 +93,5 @@ def get_loss(loss_name):
         "MSE": MSELoss,
         "Naive": NaiveBetLoss,
         "Betting": BettingLoss,
-        "CrossBet": BettingCrossEntropyLoss,
     }
     return loss_dict[loss_name]()

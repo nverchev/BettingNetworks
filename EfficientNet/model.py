@@ -273,8 +273,6 @@ def get_model(model_name, experiment, dir_path="./"):
     model_class = {"BaselineClassifier": BaselineClassifier,
                    "BettingNetworks": BettingNetworks,
                    "BettingNetworksTwoHeaded": BettingNetworksTwoHeaded,
-                   "BettingCrossEntropy": BettingNetworks,
-                   "BaselineClassifier_no_momentum": BaselineClassifier,
                    }
 
     num_classes = 50 if experiment.split("./") == "imbalanced" else 100

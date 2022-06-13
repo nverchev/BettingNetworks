@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser('training')
     parser.add_argument('--model_name', default='BaselineClassifier',
                         choices=['BaselineClassifier', 'BettingNetworks', 'BettingNetworksTwoHeaded'])
-    parser.add_argument('--loss', default='CE', choices=["CE", "MAE", "MSE", "Naive", "Betting", "CrossBet"])
+    parser.add_argument('--loss', default='CE', choices=["CE", "MAE", "MSE", "Naive", "Betting"])
     parser.add_argument('--dir_path', type=str, default='./', help='Directory for storing data and models')
     parser.add_argument('--exp_name', type=str, default='', help='Name of the experiment.')
     parser.add_argument('--eval', type=bool, default=False,

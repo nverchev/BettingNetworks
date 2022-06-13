@@ -64,7 +64,7 @@ class BettingLoss:
 
     losses = ['Book Loss', 'Bettor Loss', "CEp", "CEq"]
 
-    def __call__(self, outputs, targets, eps=0):
+    def __call__(self, outputs, targets):
         y = outputs['y']
         yhat = outputs['yhat']
         CEp = F.cross_entropy(y, targets)
@@ -73,8 +73,8 @@ class BettingLoss:
         probs = F.softmax(y, dim=-1)
         q = F.softmax(yhat, dim=-1)
         p_detached = probs.detach()
-        bettor_loss = ((q - p_detached) * (p_detached - targets - eps)).sum()
-        book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
+        bettor_loss = ((q - p_detached) * (p_detached - targets)).sum()
+        book_loss = ((q.detach() - probs) * (targets - probs)).sum()
         return {'Criterion': book_loss + bettor_loss,
                 'Book Loss': book_loss,
                 'Bettor Loss': bettor_loss,
@@ -83,24 +83,6 @@ class BettingLoss:
                 }
 
 
-class BettingCrossEntropyLoss(BettingLoss):
-
-    def __call__(self, outputs, targets, eps=0):
-        y = outputs['y']
-        yhat = outputs['yhat']
-        CEp = F.cross_entropy(y, targets)
-        CEq = F.cross_entropy(yhat, targets)
-        targets = F.one_hot(targets, num_classes=self.model.num_classes).float()
-        probs = F.softmax(y, dim=-1)
-        q = F.softmax(yhat, dim=-1)
-        bettor_loss = CEq
-        book_loss = ((q.detach() - probs) * (targets - probs - eps)).sum()
-        return {'Criterion': book_loss + bettor_loss,
-                'Book Loss': book_loss,
-                'Bettor Loss': bettor_loss,
-                'CEp': CEp,
-                'CEq': CEq
-                }
 
 
 def get_loss(loss_name):
@@ -110,6 +92,5 @@ def get_loss(loss_name):
         "MSE": MSELoss,
         "Naive": NaiveBetLoss,
         "Betting": BettingLoss,
-        "CrossBet": BettingCrossEntropyLoss,
     }
     return loss_dict[loss_name]()
