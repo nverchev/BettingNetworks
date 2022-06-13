@@ -142,7 +142,7 @@ class Trainer(metaclass=ABCMeta):
         len_sess = len(loader.dataset)
         epoch_loss = {loss: 0 for loss in self.losses}
         num_batch = len(loader)
-        iterable = tqdm(enumerate(loader), total=num_batch, disable=self.quiet_mode, leave=False)
+        iterable = tqdm(enumerate(loader), total=num_batch, disable=self.quiet_mode)
         for batch_idx, (inputs, targets) in iterable:
             if self.converge == 0:
                 return

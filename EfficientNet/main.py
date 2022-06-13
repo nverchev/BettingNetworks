@@ -1,6 +1,5 @@
 import argparse
 import torch
-from minio import Minio
 from dataset import get_dataset
 from model import get_model
 from trainer import get_trainer
@@ -48,6 +47,7 @@ if __name__ == '__main__':
     experiment = args.experiment
     minio_credential = args.minio_credential
     if minio_credential:
+        from minio import Minio
         with open(minio_credential) as f:
             server, access_key, secret_key = f.readline().split(';')
             secret_key = secret_key.strip()
