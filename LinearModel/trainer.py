@@ -1,26 +1,57 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Utils.trainer import Trainer
 from losses import get_loss
 
 
-class ClassificationTrainer(Trainer):
+class LinearTrainer(Trainer):
     quiet_mode = True
 
     def __init__(self, model, loss_name, exp_name, block_args):
         self._loss = get_loss(loss_name)
         self.losses = self._loss.losses  # losses must be defined before super().__init__()
         super().__init__(model, exp_name, **block_args)
+        return
+
+    def loss(self, outputs, inputs, targets):
+        return self._loss(outputs, targets)
+
+    # overwrites Trainer method
+    def test(self, partition='test', prob='book'):
+        super().test(partition=partition)  # stored in RAM
+        weights_err = self.get_weights_err()
+        if not self.quiet_mode:
+            print(f"MSE with true model weights: {weights_err: .2f}")
+        return None, weights_err
+
+    def get_weights_err(self):
+        infer_weights = self.model.state_dict()['lin.weight'].squeeze()
+        infer_weights = torch.hstack([self.model.state_dict()['lin.bias'], infer_weights])
+        infer_weights = infer_weights / (infer_weights ** 2).sum()
+        target_weights = self.train_loader.dataset.weights.to(self.device)
+        weights_err = ((infer_weights - target_weights) ** 2).sum()
+        return weights_err
+
+
+class ClassificationTrainer(LinearTrainer):
+    quiet_mode = True
+
+    def __init__(self, model, loss_name, exp_name, block_args):
+        super().__init__(model, loss_name, exp_name, block_args)
         self.test_probs = None
+        self.labels = None
         self.targets = None
         self.test_pred = None
         self.bins = None
         self.wrong_indices = []
         return
 
-    def loss(self, output, inputs, targets):
-        return self._loss(output, targets)
+    def loss(self, outputs, inputs, targets):
+        labels = (targets > 0.5).float()
+        return self._loss(outputs, labels)
 
     # overwrites Trainer method
     def test(self, partition='test', prob='book'):
@@ -37,22 +68,15 @@ class ClassificationTrainer(Trainer):
         self.test_probs = torch.sigmoid(y).squeeze()
         self.test_pred = torch.where(self.test_probs > .5, 1, 0)
         self.targets = torch.stack(self.test_targets).squeeze()
-        right_pred = (self.test_pred == self.targets)
+        self.labels = (self.targets > 0.5).float()
+        right_pred = (self.test_pred == self.labels)
         self.wrong_indices = torch.nonzero(~right_pred)
-        acc = 1 - self.wrong_indices.size()[0] / self.targets.size()[0]
+        acc = 1 - self.wrong_indices.size()[0] / self.labels.size()[0]
         weights_err = self.get_weights_err()
         if not self.quiet_mode:
             print('Accuracy' + f' : {100 * acc:.4f}', end='\t')
             print(f"MSE with true model weights: {weights_err: .2f}")
         return acc, weights_err
-
-    def get_weights_err(self):
-        infer_weights = self.model.state_dict()['lin.weight'].squeeze()
-        infer_weights = torch.hstack([self.model.state_dict()['lin.bias'], infer_weights])
-        infer_weights = infer_weights / (infer_weights ** 2).sum()
-        target_weights = self.train_loader.dataset.weights.to(self.device)
-        weights_err = ((infer_weights - target_weights) ** 2).sum()
-        return weights_err
 
     def prob_analysis(self, partition='val', bins=100, prob='book'):  # call after test
         print(self.exp_name)
@@ -106,7 +130,8 @@ class ClassificationTrainer(Trainer):
     def quantile_calibration_prediction(self):
         right_conf = torch.ones_like(self.test_probs)
         right_conf[self.wrong_indices] = 0
-        print(f'Brier Score: {torch.mean((self.test_probs - right_conf) ** 2):.2f}')
+        print(f'True Calibration MSE: {torch.mean((self.test_probs - self.targets) ** 2):.2f}')
+        print(f'Brier Score: {torch.mean((self.test_probs - self.labels) ** 2):.2f}')
         confidence, obs_prob = self.quantile_binning(self.test_probs, right_conf, self.bins)
         obs_prob = torch.where(confidence > 0.5, obs_prob, 1 - obs_prob)
         plt.figure(figsize=(30, 6))
@@ -124,7 +149,6 @@ class ClassificationTrainer(Trainer):
         plt.xticks(np.linspace(0, 1, 5), ticks + [round(confidence[-1].item(), 2)])
         plt.plot(np.linspace(0, 1, self.bins), confidence, color="seagreen")
         plt.show()
-
         ece = np.abs(obs_prob - confidence).mean()
         print('Quantile ECE: ', ece.item())
         return
@@ -144,5 +168,8 @@ class ClassificationTrainer(Trainer):
         return torch.stack(avg_conf), torch.stack(avg_corr)
 
 
-def get_trainer(model, loss_name, exp_name, block_args):
-    return ClassificationTrainer(model, loss_name, exp_name, block_args)
+def get_trainer(model, loss_name, exp_name, classification, block_args):
+    if classification:
+        return ClassificationTrainer(model, loss_name, exp_name, block_args)
+    else:
+        return LinearTrainer(model, loss_name, exp_name, block_args)

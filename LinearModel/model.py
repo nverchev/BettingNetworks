@@ -26,5 +26,5 @@ class BettingLinearModel(nn.Module):
                 'yhat': self.lin_q(x)}
 
 
-def get_model(loss):
-    return BettingLinearModel if loss is 'Betting' else LinearModel
+def get_model(loss_name):
+    return BettingLinearModel if loss_name == 'Betting' else LinearModel

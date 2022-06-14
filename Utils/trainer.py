@@ -33,7 +33,6 @@ class Trainer(metaclass=ABCMeta):
     losses = []  # defined later with the loss function
     quiet_mode = False  # less output
     max_output = np.inf  # maximum amount of stored evaluated test samples
-    bin = ''  # minio bin
 
     def __init__(self, model, exp_name, device, optim, train_loader, val_loader=None,
                  test_loader=None, minioClient=None, dir_path='./', mp=False, **block_args):
@@ -104,9 +103,9 @@ class Trainer(metaclass=ABCMeta):
             self.update_learning_rate(self.optimizer_settings['params'])
             self.epoch += 1
             if self.quiet_mode:
-                print('\r====> Epoch:{}'.format(self.epoch), end="")
+                print('\r====> Epoch:{:3d}'.format(self.epoch), end="")
             else:
-                print('====> Epoch:{}'.format(self.epoch))
+                print('====> Epoch:{:3d}'.format(self.epoch))
             self._run_session(partition='train')
             if self.val_loader and val_after_train:  # check losses on val
                 self._run_session(partition='val', inference=True)  # best to test instead

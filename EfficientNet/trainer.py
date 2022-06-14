@@ -5,8 +5,10 @@ from losses import get_loss
 from sklearn import metrics
 import torch.nn.functional as F
 import sys, os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Utils.trainer import Trainer
+
 
 class ClassificationTrainer(Trainer):
     _metrics = {}
