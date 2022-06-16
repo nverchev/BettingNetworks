@@ -139,6 +139,7 @@ class ClassificationTrainer(LinearTrainer):
             true_probabilities = .5 * (1 + erf(logits / noise))
             mse_true_cal = (self.test_probs - true_probabilities) ** 2
             print(f'True Calibration MSE: {torch.mean(mse_true_cal):.5f} +/-{mse_true_cal.std():.5f}')
+
         br_score = (self.test_probs - self.labels) ** 2
         print(f'Brier Score: {torch.mean(br_score):.5f} +/-{br_score.std():.5f}')
         confidence, obs_prob = self.quantile_binning(self.test_probs, right_conf, self.bins)

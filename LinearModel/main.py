@@ -73,10 +73,12 @@ if __name__ == '__main__':
         acc, weights_err = trainer.test(partition="test")
         accs.append(acc)
         weights_errs.append(weights_err.cpu())
-    if classification:
-        trainer.test(partition="test")
-        trainer.prob_analysis(partition='test')
-        accs = np.array(accs)
-        print(f"Overall acc: {accs.mean():.4f} +/-{accs.std():.3f}", end="")
     print(f"\nOverall weight_err: {np.array(weights_errs).mean():.4f}")
+    if classification:
+        accs = np.array(accs)
+        print(f"Overall accuracy: {accs.mean():.4f} +/-{accs.std():.4f}")
+        acc, weights_err = trainer.test(partition="test")
+        trainer.prob_analysis(partition='test')
+        print(f"No noise accuracy: {acc:.4f}")
+
 
