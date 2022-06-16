@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from scipy.special import erf
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Utils.trainer import Trainer
@@ -130,8 +131,16 @@ class ClassificationTrainer(LinearTrainer):
     def quantile_calibration_prediction(self):
         right_conf = torch.ones_like(self.test_probs)
         right_conf[self.wrong_indices] = 0
-        print(f'True Calibration MSE: {torch.mean((self.test_probs - self.targets) ** 2):.2f}')
-        print(f'Brier Score: {torch.mean((self.test_probs - self.labels) ** 2):.2f}')
+        mse_regr = (self.test_probs - self.targets) ** 2
+        print(f'Regression MSE: {torch.mean(mse_regr):.5f} +/-{mse_regr.std():.5f}')
+        noise = self.train_loader.dataset.noise_target
+        if noise:
+            logits = torch.special.logit(self.targets)
+            true_probabilities = .5 * (1 + erf(logits / noise))
+            mse_true_cal = (self.test_probs - true_probabilities) ** 2
+            print(f'True Calibration MSE: {torch.mean(mse_true_cal):.5f} +/-{mse_true_cal.std():.5f}')
+        br_score = (self.test_probs - self.labels) ** 2
+        print(f'Brier Score: {torch.mean(br_score):.5f} +/-{br_score.std():.5f}')
         confidence, obs_prob = self.quantile_binning(self.test_probs, right_conf, self.bins)
         obs_prob = torch.where(confidence > 0.5, obs_prob, 1 - obs_prob)
         plt.figure(figsize=(30, 6))
